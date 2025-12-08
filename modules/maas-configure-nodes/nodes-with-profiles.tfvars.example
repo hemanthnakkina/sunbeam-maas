@@ -1,0 +1,221 @@
+# Example using network profiles to reduce duplication
+
+# Define reusable network profiles
+network_profiles = {
+  "hyperconverged" = {
+    physical_interfaces = {
+      "eth0" = {
+        tags    = ["mgmt"]
+        vlan_id = 10
+        mtu     = 1500
+      }
+      "eth1" = {
+        tags = ["data"]
+        mtu  = 9000
+      }
+      "eth2" = {
+        tags = ["data"]
+        mtu  = 9000
+      }
+    }
+
+    bond_interfaces = {
+      "bond0" = {
+        name            = "bond0"
+        parents         = ["eth1", "eth2"]
+        bond_mode       = "802.3ad"
+        bond_lacp_rate  = "fast"
+        bond_miimon     = 100
+        mtu             = 9000
+        tags            = ["data-bond"]
+      }
+    }
+
+    vlan_interfaces = {
+      "bond0.100" = {
+        name    = "bond0.100"  # Optional: defaults to key if not specified
+        parent  = "bond0"
+        vlan_id = 100
+        fabric  = 1
+        tags    = ["storage"]
+        mtu     = 9000
+      }
+    }
+
+    interface_links = {
+      "eth0-mgmt" = {
+        network_interface = "eth0"
+        subnet_id         = "subnet-mgmt"
+        mode              = "STATIC"
+        # ip_address will be provided by each node via static_ip_addresses
+        default_gateway = true
+      }
+      "bond0-data" = {
+        network_interface = "bond0"
+        subnet_id         = "subnet-data"
+        mode              = "DHCP"
+      }
+      "bond0.100-storage" = {
+        network_interface = "bond0.100"
+        subnet_id         = "subnet-storage"
+        mode              = "STATIC"
+        # ip_address will be provided by each node
+      }
+    }
+  }
+
+  "compute" = {
+    physical_interfaces = {
+      "eth0" = {
+        tags    = ["mgmt"]
+        vlan_id = 10
+        mtu     = 1500
+      }
+    }
+
+    bridge_interfaces = {
+      "br-ex" = {
+        name        = "br-ex"
+        parent      = "eth0"
+        bridge_type = "ovs"
+        bridge_stp  = false
+        tags        = ["external"]
+      }
+    }
+
+    interface_links = {
+      "br-ex-mgmt" = {
+        network_interface = "br-ex"
+        subnet_id         = "subnet-mgmt"
+        mode              = "STATIC"
+        default_gateway   = true
+      }
+    }
+  }
+}
+
+# Define nodes using profiles - only specify MACs and IP addresses
+nodes = {
+  "compute-1.maas" = {
+    network_profile = "hyperconverged"
+
+    physical_interfaces = {
+      "eth0" = {
+        mac_address = "52:54:00:01:00:01"
+      }
+      "eth1" = {
+        mac_address = "52:54:00:01:00:02"
+      }
+      "eth2" = {
+        mac_address = "52:54:00:01:00:03"
+      }
+    }
+
+    static_ip_addresses = {
+      "eth0-ip" = {
+        interface_name = "eth0"
+        subnet_id      = "subnet-mgmt"
+        ip_address     = "10.0.10.11"
+      }
+    }
+  }
+
+  "compute-2.maas" = {
+    network_profile = "hyperconverged"
+
+    physical_interfaces = {
+      "eth0" = {
+        mac_address = "52:54:00:02:00:01"
+      }
+      "eth1" = {
+        mac_address = "52:54:00:02:00:02"
+      }
+      "eth2" = {
+        mac_address = "52:54:00:02:00:03"
+      }
+    }
+
+    static_ip_addresses = {
+      "eth0-ip" = {
+        interface_name = "eth0"
+        subnet_id      = "subnet-mgmt"
+        ip_address     = "10.0.10.12"
+      }
+    }
+  }
+
+  "compute-3.maas" = {
+    network_profile = "hyperconverged"
+
+    physical_interfaces = {
+      "eth0" = {
+        mac_address = "52:54:00:03:00:01"
+      }
+      "eth1" = {
+        mac_address = "52:54:00:03:00:02"
+      }
+      "eth2" = {
+        mac_address = "52:54:00:03:00:03"
+      }
+    }
+
+    static_ip_addresses = {
+      "eth0-ip" = {
+        interface_name = "eth0"
+        subnet_id      = "subnet-mgmt"
+        ip_address     = "10.0.10.13"
+      }
+    }
+  }
+
+  "controller-1.maas" = {
+    network_profile = "compute"
+
+    physical_interfaces = {
+      "eth0" = {
+        mac_address = "52:54:00:04:00:01"
+      }
+    }
+
+    static_ip_addresses = {
+      "eth0-ip" = {
+        interface_name = "eth0"
+        subnet_id      = "subnet-mgmt"
+        ip_address     = "10.0.10.21"
+      }
+    }
+  }
+
+  # Example without profile - manual configuration
+  "storage-1.maas" = {
+    physical_interfaces = {
+      "eth0" = {
+        mac_address = "52:54:00:05:00:01"
+        name        = "eth0"
+        tags        = ["mgmt"]
+        mtu         = 1500
+      }
+      "eth1" = {
+        mac_address = "52:54:00:05:00:02"
+        name        = "eth1"
+        tags        = ["storage"]
+        mtu         = 9000
+      }
+    }
+
+    interface_links = {
+      "eth0-static" = {
+        network_interface = "eth0"
+        subnet_id         = "subnet-mgmt"
+        mode              = "STATIC"
+        ip_address        = "10.0.10.31"
+        default_gateway   = true
+      }
+      "eth1-storage" = {
+        network_interface = "eth1"
+        subnet_id         = "subnet-storage"
+        mode              = "DHCP"
+      }
+    }
+  }
+}

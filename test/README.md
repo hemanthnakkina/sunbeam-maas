@@ -48,6 +48,16 @@ go test -v -timeout 30m -parallel 10
   
 - `maas_enlist_machines_test.go` - Tests for the machines module
   - Single and multiple machine configurations
+
+- `maas_configure_nodes_test.go` - Tests for the node configuration module
+  - Module validation
+  - Profile merging logic
+  - Bond interface creation
+  - Bridge interface creation
+  - VLAN interface creation
+  - Interface link configuration (STATIC, DHCP, AUTO)
+  - Output validation
+  - Empty configuration handling
   - Power type validation
   - Output checks
 

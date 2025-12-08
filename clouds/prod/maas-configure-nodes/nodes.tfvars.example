@@ -1,0 +1,92 @@
+nodes = {
+  "compute-1.maas" = {
+    network_profile = "hyperconverged"
+    physical_interfaces = {
+      eth0 = {
+        mac_address = "52:54:00:01:00:01"
+      }
+      eth1 = {
+        mac_address = "52:54:00:01:00:02"
+      }
+      eth2 = {
+        mac_address = "52:54:00:01:00:03"
+      }
+    }
+    bond_interfaces   = {}
+    bridge_interfaces = {}
+    vlan_interfaces   = {}
+    interface_links   = {}
+    static_ip_addresses = {
+      eth0-ip = {
+        interface_name = "eth0"
+        subnet_id      = "subnet-mgmt-id"
+        ip_address     = "10.0.10.11"
+      }
+      "bond0.100-ip" = {
+        interface_name = "bond0.100"
+        subnet_id      = "subnet-storage-id"
+        ip_address     = "10.100.10.11"
+      }
+    }
+  }
+  "compute-2.maas" = {
+    network_profile = "hyperconverged"
+    physical_interfaces = {
+      eth0 = {
+        mac_address = "52:54:00:02:00:01"
+      }
+      eth1 = {
+        mac_address = "52:54:00:02:00:02"
+      }
+      eth2 = {
+        mac_address = "52:54:00:02:00:03"
+      }
+    }
+    bond_interfaces   = {}
+    bridge_interfaces = {}
+    vlan_interfaces   = {}
+    interface_links   = {}
+    static_ip_addresses = {
+      eth0-ip = {
+        interface_name = "eth0"
+        subnet_id      = "subnet-mgmt-id"
+        ip_address     = "10.0.10.12"
+      }
+      "bond0.100-ip" = {
+        interface_name = "bond0.100"
+        subnet_id      = "subnet-storage-id"
+        ip_address     = "10.100.10.12"
+      }
+    }
+  }
+  "compute-3.maas" = {
+    network_profile = "hyperconverged"
+    physical_interfaces = {
+      eth0 = {
+        mac_address = "52:54:00:03:00:01"
+      }
+      eth1 = {
+        mac_address = "52:54:00:03:00:02"
+      }
+      eth2 = {
+        mac_address = "52:54:00:03:00:03"
+      }
+    }
+    bond_interfaces   = {}
+    bridge_interfaces = {}
+    vlan_interfaces   = {}
+    interface_links   = {}
+    static_ip_addresses = {
+      eth0-ip = {
+        interface_name = "eth0"
+        subnet_id      = "subnet-mgmt-id"
+        ip_address     = "10.0.10.13"
+      }
+      "bond0.100-ip" = {
+        interface_name = "bond0.100"
+        subnet_id      = "subnet-storage-id"
+        ip_address     = "10.100.10.13"
+      }
+    }
+  }
+}
