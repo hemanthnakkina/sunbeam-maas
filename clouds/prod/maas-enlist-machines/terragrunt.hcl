@@ -1,4 +1,4 @@
-# MAAS Machines Unit - Enlist multiple machines
+# MAAS Enlist Machines Unit - Enlist multiple machines
 terraform {
   source = "."
 
@@ -36,6 +36,21 @@ dependency "maas_config" {
   skip_outputs = true
 }
 
+dependency "maas_configure_networking" {
+  config_path = "../maas-configure-networking"
+  
+  mock_outputs = {
+    spaces     = {}
+    fabrics    = {}
+    vlans      = {}
+    subnets    = {}
+    ip_ranges  = {}
+  }
+  
+  # Skip outputs if the dependency hasn't been applied yet
+  skip_outputs = true
+}
+
 locals {
   # Machines will be loaded from tfvars file, not from locals
   # This is just a placeholder for the generate block
@@ -54,7 +69,7 @@ generate "main" {
 
 module "machine" {
   for_each = var.machines
-  source   = "${get_terragrunt_dir()}/../../../modules/machine"
+  source   = "${get_terragrunt_dir()}/../../../modules/maas-enlist-machines"
 
   power_type = each.value.power_type
   power_parameters = jsonencode({

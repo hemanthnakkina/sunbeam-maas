@@ -1,6 +1,6 @@
-# MAAS Machines Unit
+# MAAS Enlist Machines Unit
 
-This unit enlists multiple MAAS machines using the `machine` module. Machine configurations are defined in a variables file and dynamically generated into Terraform module calls.
+This unit enlists multiple MAAS machines using the `maas-enlist-machines` module. Machine configurations are defined in a variables file and dynamically generated into Terraform module calls.
 
 ## Usage
 

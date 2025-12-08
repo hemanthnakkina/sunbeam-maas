@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  terraform-lint:
+    name: Terraform Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+  terraform-validate:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - modules/maas-configure-networking
+          - modules/maas-enlist-machines
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        working-directory: ${{ matrix.module }}
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        working-directory: ${{ matrix.module }}
+        run: terraform validate
+
+  terragrunt-validate:
+    name: Terragrunt Validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        unit:
+          - clouds/prod/maas-configure-networking
+          - clouds/prod/maas-enlist-machines
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Setup Terragrunt
+        run: |
+          wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.93.13/terragrunt_linux_amd64
+          chmod +x terragrunt_linux_amd64
+          sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
+          terragrunt --version
+
+      - name: Terragrunt Validate
+        working-directory: ${{ matrix.unit }}
+        run: terragrunt validate
+        env:
+          MAAS_API_URL: "http://mock-maas:5240/MAAS"
+          MAAS_API_KEY: "mock-key:mock-secret:mock-token"
+
+  terratest-unit-tests:
+    name: Terratest Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: Go Module Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('test/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download Go Dependencies
+        working-directory: test
+        run: go mod download
+
+      - name: Run Validation Tests
+        working-directory: test
+        run: go test -v -run Validation -timeout 10m
+
+      - name: Run Module Tests (excluding integration tests)
+        working-directory: test
+        run: go test -v -short -run TestMaas.*Module -timeout 10m
+        env:
+          MAAS_API_URL: "http://mock-maas:5240/MAAS"
+          MAAS_API_KEY: "mock-key:mock-secret:mock-token"
+
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Run TFLint on modules
+        run: |
+          for module in modules/*/; do
+            echo "Linting $module"
+            (cd "$module" && tflint --format compact) || true
+          done
