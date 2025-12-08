@@ -1,0 +1,233 @@
+# MAAS Networking Configuration
+# Hierarchical structure: Fabrics → VLANs → Subnets → IP Ranges
+
+spaces = {
+  "ceph-access-space" = {
+    description = "Ceph access."
+  }
+  "ceph-replica-space" = {
+    description = "Ceph replication."
+  }
+  "overlay-space" = {
+    description = "OpenStack Overlay network."
+  }
+  "internal-space" = {
+    description = "OpenStack Internal network."
+  }
+  "oam-space" = {
+    description = "Operations, administration and management. PXE and stuff."
+  }
+  "public-space" = {
+    description = "OpenStack Public API."
+  }
+  "provider-space" = {
+    description = "Floating IP/Provider network"
+  }
+  "admin-space" = {
+    description = "OpenStack Admin network"
+  }
+  "tenant-storage-space" = {
+    description = "CephFS NFS access"
+  }
+}
+
+fabrics = {
+  "management-fabric" = {
+    vlans = [
+      {
+        vid     = 3400
+        dhcp_on = true
+        mtu     = 1500
+        space   = "oam-space"
+        subnets = {
+          "oam" = {
+            cidr       = "10.0.2.0/24"
+            gateway_ip = "10.0.2.1"
+            reserved = {
+              "oam-gateway" = {
+                start_ip = "10.0.2.1"
+                end_ip   = "10.0.2.9"
+              }
+              "dhcp" = {
+                start_ip = "10.0.2.200"
+                end_ip   = "10.0.2.254"
+                type     = "dynamic"
+              }
+              "infra" = {
+                start_ip = "10.0.2.10"
+                end_ip   = "10.0.2.15"
+              }
+              "metallb" = {
+                start_ip = "10.0.2.40"
+                end_ip   = "10.0.2.41"
+              }
+            }
+          }
+        }
+      },
+      {
+        vid     = 3402
+        dhcp_on = false
+        mtu     = 1500
+        space   = "admin-space"
+        subnets = {
+          "admin" = {
+            cidr = "10.0.3.0/24"
+            reserved = {
+              "gw" = {
+                start_ip = "10.0.3.1"
+                end_ip   = "10.0.3.9"
+              }
+              "infra" = {
+                start_ip = "10.0.3.10"
+                end_ip   = "10.0.3.15"
+              }
+              "vip" = {
+                start_ip = "10.0.3.16"
+                end_ip   = "10.0.3.40"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+
+  "data-fabric" = {
+    vlans = [
+      {
+        vid = 3404
+        mtu = 9000
+        space = "public-space"
+        subnets = {
+          "public" = {
+            cidr = "10.0.8.0/24"
+            reserved = {
+              "public-gateway" = {
+                start_ip = "10.0.8.1"
+                end_ip   = "10.0.8.9"
+              }
+              "vips" = {
+                start_ip = "10.0.8.16"
+                end_ip   = "10.0.8.40"
+              }
+            }
+          }
+        }
+      },
+      {
+        vid = 3403
+        mtu = 9000
+        space = "internal-space"
+        subnets = {
+          "internal" = {
+            cidr = "10.0.7.0/24"
+            reserved = {
+              "internal-gateway" = {
+                start_ip = "10.0.7.1"
+                end_ip   = "10.0.7.9"
+              }
+              "vips" = {
+                start_ip = "10.0.7.16"
+                end_ip   = "10.0.7.40"
+              }
+              "infra" = {
+                start_ip = "10.0.7.10"
+                end_ip   = "10.0.7.15"
+              }
+            }
+          }
+        }
+      },
+      {
+        vid = 3407
+        mtu = 9000
+        space = "overlay-space"
+        subnets = {
+          "overlay" = {
+            cidr = "10.0.6.0/24"
+            reserved = {
+              "overlay-gateway" = {
+                start_ip = "10.0.6.1"
+                end_ip   = "10.0.6.9"
+              }
+            }
+          }
+        }
+      },
+      {
+        vid = 3406
+        mtu = 9000
+        space = "ceph-replica-space"
+        subnets = {
+          "ceph_replication" = {
+            cidr = "10.0.5.0/24"
+            reserved = {
+              "ceph-replication-gateway" = {
+                start_ip = "10.0.5.1"
+                end_ip   = "10.0.5.9"
+              }
+            }
+          }
+        }
+      },
+      {
+        vid = 3405
+        mtu = 9000
+        space = "ceph-access-space"
+        subnets = {
+          "ceph_access" = {
+            cidr = "10.0.4.0/24"
+            reserved = {
+              "ceph-access-gateway" = {
+                start_ip = "10.0.4.1"
+                end_ip   = "10.0.4.9"
+              }
+            }
+          }
+        }
+      },
+      {
+        vid = 3409
+        mtu = 1500
+        space = "provider-space"
+        subnets = {
+          "provider" = {
+            cidr = "192.0.2.0/28"
+            reserved = {
+              "provider-gateway" = {
+                start_ip = "192.0.2.1"
+                end_ip   = "192.0.2.1"
+              }
+            }
+          }
+        }
+      },
+      {
+        vid     = 3408
+        dhcp_on = false
+        mtu     = 9000
+        space   = "tenant-storage-space"
+        subnets = {
+          "tenant-storage" = {
+            cidr = "10.0.9.0/24"
+            reserved = {
+              "gw" = {
+                start_ip = "10.0.9.1"
+                end_ip   = "10.0.9.9"
+              }
+              "vip" = {
+                start_ip = "10.0.9.10"
+                end_ip   = "10.0.9.19"
+              }
+              "tenant" = {
+                start_ip = "10.0.9.50"
+                end_ip   = "10.0.9.254"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

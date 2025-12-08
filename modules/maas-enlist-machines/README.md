@@ -1,4 +1,4 @@
-# MAAS Machine Module
+# MAAS Enlist Machines Module
 
 This module wraps the [canonical/maas](https://registry.terraform.io/providers/canonical/maas/latest/docs/resources/machine) provider's machine resource to manage physical or virtual machines in MAAS.
 

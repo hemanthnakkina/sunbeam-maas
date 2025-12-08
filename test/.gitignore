@@ -1,0 +1,16 @@
+# Ignore test binaries
+*.test
+
+# Ignore test cache
+.cache/
+
+# Ignore Terraform state files created during testing
+*.tfstate
+*.tfstate.*
+.terragrunt-cache/
+
+# Ignore crash log files
+crash.log
+
+# Ignore any local test configurations
+test.config

@@ -1,4 +1,4 @@
-# MAAS Machine Module
+# MAAS Enlist Machines Module
 # Wraps the canonical/maas provider machine resource
 # Reference: https://registry.terraform.io/providers/canonical/maas/latest/docs/resources/machine
 
