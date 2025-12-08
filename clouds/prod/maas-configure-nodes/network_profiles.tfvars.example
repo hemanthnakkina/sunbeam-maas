@@ -1,0 +1,87 @@
+network_profiles = {
+  hyperconverged = {
+    physical_interfaces = {
+      eth0 = {
+        tags    = ["mgmt"]
+        vlan_id = 10
+        mtu     = 1500
+      }
+      eth1 = {
+        tags = ["data"]
+        mtu  = 9000
+      }
+      eth2 = {
+        tags = ["data"]
+        mtu  = 9000
+      }
+    }
+    bond_interfaces = {
+      bond0 = {
+        name           = "bond0"
+        parents        = ["eth1", "eth2"]
+        bond_mode      = "802.3ad"
+        bond_lacp_rate = "fast"
+        bond_miimon    = 100
+        mtu            = 9000
+        tags           = ["data-bond"]
+      }
+    }
+    bridge_interfaces = {}
+    vlan_interfaces = {
+      "bond0.100" = {
+        name    = "bond0.100" # Optional: defaults to key if not specified
+        parent  = "bond0"
+        vlan_id = 100
+        fabric  = 1
+        tags    = ["storage"]
+        mtu     = 9000
+      }
+    }
+    interface_links = {
+      eth0-mgmt = {
+        network_interface = "eth0"
+        subnet_id         = "subnet-mgmt-id"
+        mode              = "STATIC"
+        default_gateway   = true
+      }
+      bond0-data = {
+        network_interface = "bond0"
+        subnet_id         = "subnet-data-id"
+        mode              = "DHCP"
+      }
+      "bond0.100-storage" = {
+        network_interface = "bond0.100"
+        subnet_id         = "subnet-storage-id"
+        mode              = "STATIC"
+      }
+    }
+  }
+  compute = {
+    physical_interfaces = {
+      eth0 = {
+        tags    = ["mgmt"]
+        vlan_id = 10
+        mtu     = 1500
+      }
+    }
+    bond_interfaces = {}
+    bridge_interfaces = {
+      br-ex = {
+        name        = "br-ex"
+        parent      = "eth0"
+        bridge_type = "ovs"
+        bridge_stp  = false
+        tags        = ["external"]
+      }
+    }
+    vlan_interfaces = {}
+    interface_links = {
+      br-ex-mgmt = {
+        network_interface = "br-ex"
+        subnet_id         = "subnet-mgmt-id"
+        mode              = "STATIC"
+        default_gateway   = true
+      }
+    }
+  }
+}

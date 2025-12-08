@@ -1,0 +1,212 @@
+# Example Node Configuration
+
+# Note: The map keys ("compute-1", "compute-2", etc.) are used as machine hostnames in MAAS
+nodes = {
+  # Example node with physical interface and static IP
+  "compute-1.maas" = {
+    physical_interfaces = {
+      "eth0" = {
+        mac_address = "52:54:00:00:00:01" # Replace with actual MAC
+        name        = "eth0"
+        tags        = ["primary"]
+        vlan_id     = 10 # Optional: assign to VLAN
+        mtu         = 1500
+      }
+      "eth1" = {
+        mac_address = "52:54:00:00:00:02"
+        name        = "eth1"
+        tags        = ["secondary"]
+      }
+    }
+
+    interface_links = {
+      "eth0-static" = {
+        network_interface = "eth0"
+        subnet_id         = "subnet-id-1" # Replace with actual subnet ID
+        mode              = "STATIC"
+        ip_address        = "10.0.1.10"
+        default_gateway   = true
+      }
+      "eth1-dhcp" = {
+        network_interface = "eth1"
+        subnet_id         = "subnet-id-2"
+        mode              = "DHCP"
+      }
+    }
+  }
+
+  # Example node with bond interface
+  "compute-2.maas" = {
+    physical_interfaces = {
+      "eth0" = {
+        mac_address = "52:54:00:00:01:01"
+        name        = "eth0"
+      }
+      "eth1" = {
+        mac_address = "52:54:00:00:01:02"
+        name        = "eth1"
+      }
+    }
+
+    bond_interfaces = {
+      "bond0" = {
+        name                  = "bond0"
+        parents               = ["eth0", "eth1"]
+        bond_mode             = "802.3ad" # LACP
+        bond_lacp_rate        = "fast"
+        bond_xmit_hash_policy = "layer3+4"
+        bond_miimon           = 100
+        mtu                   = 9000 # Jumbo frames
+        tags                  = ["bonded", "production"]
+      }
+    }
+
+    interface_links = {
+      "bond0-static" = {
+        network_interface = "bond0"
+        subnet_id         = "subnet-id-3"
+        mode              = "STATIC"
+        ip_address        = "10.0.1.20"
+        default_gateway   = true
+      }
+    }
+  }
+
+  # Example node with VLAN interface
+  "storage-1.maas" = {
+    physical_interfaces = {
+      "eth0" = {
+        mac_address = "52:54:00:00:02:01"
+        name        = "eth0"
+        mtu         = 9000
+      }
+    }
+
+    vlan_interfaces = {
+      "eth0.100" = {
+        name    = "eth0.100"  # Optional: defaults to key if not specified
+        parent  = "eth0"
+        vlan_id = 100
+        fabric  = 1  # Fabric ID
+        tags    = ["storage"]
+        mtu     = 9000
+      }
+      "eth0.200" = {
+        name    = "eth0.200"
+        parent  = "eth0"
+        vlan_id = 200
+        fabric  = 1
+        tags    = ["management"]
+      }
+    }
+
+    interface_links = {
+      "eth0-mgmt" = {
+        network_interface = "eth0"
+        subnet_id         = "subnet-id-4"
+        mode              = "STATIC"
+        ip_address        = "10.0.1.30"
+        default_gateway   = true
+      }
+      "vlan100-storage" = {
+        network_interface = "eth0.100"
+        subnet_id         = "subnet-id-5"
+        mode              = "STATIC"
+        ip_address        = "10.100.1.30"
+      }
+      "vlan200-backup" = {
+        network_interface = "eth0.200"
+        subnet_id         = "subnet-id-6"
+        mode              = "AUTO"
+      }
+    }
+  }
+
+  # Example node with bridge interface (for VMs/containers)
+  "hypervisor-1.maas" = {
+    physical_interfaces = {
+      "eth0" = {
+        mac_address = "52:54:00:00:04:01"
+        name        = "eth0"
+      }
+    }
+
+    bridge_interfaces = {
+      "br0" = {
+        name        = "br0"
+        parent      = "eth0"
+        bridge_type = "standard"  # standard or ovs (Open vSwitch)
+        bridge_stp  = false       # Disable STP for performance
+        bridge_fd   = 0           # Forward delay
+        mtu         = 1500
+        tags        = ["vm-bridge"]
+      }
+      "br1" = {
+        name        = "br1"
+        # No parent - standalone bridge
+        bridge_type = "ovs"  # Example of Open vSwitch bridge
+        bridge_stp  = false
+        tags        = ["standalone", "ovs"]
+      }
+    }
+
+    interface_links = {
+      "br0-static" = {
+        interface_name  = "br0"
+        subnet_id       = "subnet-id-9"
+        mode            = "STATIC"
+        ip_address      = "10.0.1.50"
+        default_gateway = true
+      }
+    }
+  }
+
+  # Complex example: Bond + VLAN
+  "compute-3.maas" = {
+    physical_interfaces = {
+      "eth0" = {
+        mac_address = "52:54:00:00:03:01"
+        name        = "eth0"
+      }
+      "eth1" = {
+        mac_address = "52:54:00:00:03:02"
+        name        = "eth1"
+      }
+    }
+
+    bond_interfaces = {
+      "bond0" = {
+        name            = "bond0"
+        parents         = ["eth0", "eth1"]
+        bond_mode       = "active-backup"
+        bond_miimon     = 100
+        bond_updelay    = 200
+        bond_downdelay  = 200
+      }
+    }
+
+    vlan_interfaces = {
+      "bond0.100" = {
+        name    = "bond0.100"
+        parent  = "bond0"
+        vlan_id = 100
+        fabric  = 1
+        tags    = ["data"]
+      }
+    }
+
+    interface_links = {
+      "bond0-mgmt" = {
+        network_interface = "bond0"
+        subnet_id         = "subnet-id-7"
+        mode              = "DHCP"
+      }
+      "bond0.100-data" = {
+        network_interface = "bond0.100"
+        subnet_id         = "subnet-id-8"
+        mode              = "STATIC"
+        ip_address        = "10.100.1.40"
+      }
+    }
+  }
+}
