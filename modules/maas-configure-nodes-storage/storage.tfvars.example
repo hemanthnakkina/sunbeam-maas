@@ -1,0 +1,258 @@
+# Example configuration for MAAS node storage
+
+nodes = {
+  # Example with block devices, partitions, and RAID
+  node1 = {
+    hostname = "maas-node-1"
+
+    # Block devices with partitions
+    block_devices = {
+      sda = {
+        name           = "sda"
+        id_path        = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0"
+        size_gigabytes = 500
+        tags           = ["boot", "system"]
+        partitions = [
+          {
+            size_gigabytes = 50
+            fs_type        = "ext4"
+            mount_point    = "/boot"
+            bootable       = true
+            label          = "boot"
+          },
+          {
+            size_gigabytes = 100
+            fs_type        = "ext4"
+            mount_point    = "/"
+            label          = "root"
+          },
+          {
+            size_gigabytes = 350
+            # Unformatted partition for LVM
+            tags           = ["vg:vg_data"]  # Auto-discovered by vg_data
+          }
+        ]
+      }
+      sdb = {
+        name           = "sdb"
+        id_path        = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1"
+        size_gigabytes = 1000
+        tags           = ["storage"]
+        partitions = [
+          {
+            size_gigabytes = 1000
+            tags           = ["raid:md0"]  # Auto-discovered by RAID md0
+          }
+        ]
+      }
+      sdc = {
+        name           = "sdc"
+        id_path        = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi2"
+        size_gigabytes = 1000
+        tags           = ["storage"]
+        partitions = [
+          {
+            size_gigabytes = 1000
+            tags           = ["raid:md0"]  # Auto-discovered by RAID md0
+          }
+        ]
+      }
+    }
+
+    # RAID arrays - partitions tagged with "raid:md0" are automatically included
+    raids = {
+      md0 = {
+        name          = "md0"
+        level         = 1  # RAID 1 (mirroring)
+        # Partitions from sdb and sdc are auto-discovered via tags
+        fs_type       = "ext4"
+        mount_point   = "/mnt/raid1"
+        mount_options = "defaults,noatime"
+      }
+    }
+
+    # LVM Volume Groups - partitions tagged with "vg:vg_data" are automatically included
+    volume_groups = {
+      vg_data = {
+        name = "vg-data"
+        # Partition from sda is auto-discovered via tags
+      }
+    }
+
+    # Logical Volumes
+    logical_volumes = {
+      lv_var = {
+        name           = "lv-var"
+        volume_group   = "vg_data"
+        size_gigabytes = 50
+        fs_type        = "xfs"
+        mount_point    = "/var"
+        mount_options  = "defaults"
+      }
+      lv_home = {
+        name           = "lv-home"
+        volume_group   = "vg_data"
+        size_gigabytes = 100
+        fs_type        = "xfs"
+        mount_point    = "/home"
+      }
+    }
+  }
+
+  # Example with model/serial identification
+  node2 = {
+    hostname = "maas-node-2"
+
+    block_devices = {
+      disk1 = {
+        name           = "sda"
+        model          = "Samsung SSD 860"
+        serial         = "S3Z9NB0M123456"
+        size_gigabytes = 256
+        partitions = [
+          {
+            size_gigabytes = 256
+            fs_type        = "ext4"
+            mount_point    = "/data"
+            tags           = ["fast-storage"]
+          }
+        ]
+      }
+    }
+  }
+
+  # Example with RAID 5 using partition IDs
+  node3 = {
+    hostname = "maas-node-3"
+
+    block_devices = {
+      sda = {
+        name           = "sda"
+        id_path        = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0"
+        size_gigabytes = 2000
+        partitions = [
+          {
+            size_gigabytes = 2000
+            tags           = ["raid:md0"]  # Auto-discovered by RAID md0
+          }
+        ]
+      }
+      sdb = {
+        name           = "sdb"
+        id_path        = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1"
+        size_gigabytes = 2000
+        partitions = [
+          {
+            size_gigabytes = 2000
+            tags           = ["raid:md0"]
+          }
+        ]
+      }
+      sdc = {
+        name           = "sdc"
+        id_path        = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi2"
+        size_gigabytes = 2000
+        partitions = [
+          {
+            size_gigabytes = 2000
+            tags           = ["raid:md0"]
+          }
+        ]
+      }
+      sdd = {
+        name           = "sdd"
+        id_path        = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi3"
+        size_gigabytes = 2000
+        partitions = [
+          {
+            size_gigabytes = 2000
+            tags           = ["raid-spare:md0"]  # Auto-discovered as spare
+          }
+        ]
+      }
+    }
+
+    raids = {
+      md0 = {
+        name        = "md0"
+        level       = 5  # RAID 5 (striping with parity)
+        # Partitions from sda, sdb, sdc auto-discovered via "raid:md0" tag
+        # Spare partition from sdd auto-discovered via "raid-spare:md0" tag
+        fs_type     = "xfs"
+        mount_point = "/mnt/raid5"
+      }
+    }
+  }
+
+  # Example with LVM on RAID
+  node4 = {
+    hostname = "maas-node-4"
+
+    block_devices = {
+      sda = {
+        name           = "sda"
+        id_path        = "/dev/disk/by-id/wwn-0x5000c50094e12345"
+        size_gigabytes = 4000
+      }
+      sdb = {
+        name           = "sdb"
+        id_path        = "/dev/disk/by-id/wwn-0x5000c50094e12346"
+        size_gigabytes = 4000
+      }
+    }
+
+    raids = {
+      md0 = {
+        name          = "md0"
+        level         = 0                    # RAID 0 (striping for performance)
+        block_devices = ["sda", "sdb"]
+        # No filesystem - will be used for LVM
+      }
+    }
+
+    volume_groups = {
+      vg_fast = {
+        name       = "vg-fast"
+        partitions = [127]                   # Partition ID from RAID md0
+      }
+    }
+
+    logical_volumes = {
+      lv_database = {
+        name           = "lv-database"
+        volume_group   = "vg_fast"
+        size_gigabytes = 1000
+        fs_type        = "xfs"
+        mount_point    = "/var/lib/mysql"
+        mount_options  = "noatime,nodiratime"
+      }
+      lv_logs = {
+        name           = "lv-logs"
+        volume_group   = "vg_fast"
+        size_gigabytes = 500
+        fs_type        = "ext4"
+        mount_point    = "/var/log"
+      }
+    }
+  }
+
+  # Minimal example - just format a single disk
+  node5 = {
+    hostname = "maas-node-5"
+
+    block_devices = {
+      sda = {
+        name           = "sda"
+        id_path        = "/dev/disk/by-id/ata-WDC_WD10EZEX-08WN4A0_WD-WCC6Y1234567"
+        size_gigabytes = 1000
+        partitions = [
+          {
+            size_gigabytes = 1000
+            fs_type        = "ext4"
+            mount_point    = "/data"
+          }
+        ]
+      }
+    }
+  }
+}

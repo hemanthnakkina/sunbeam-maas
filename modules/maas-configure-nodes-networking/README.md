@@ -1,4 +1,4 @@
-# maas-configure-nodes
+# maas-configure-nodes-networking
 
 This module configures network interfaces on MAAS machines. It supports:
 - Physical interfaces
@@ -23,7 +23,7 @@ This module configures network interfaces on MAAS machines. It supports:
 
 ```hcl
 module "configure_nodes" {
-  source = "../../modules/maas-configure-nodes"
+  source = "../../modules/maas-configure-nodes-networking"
 
   # Define reusable network profiles
   network_profiles = {
@@ -112,7 +112,7 @@ module "configure_nodes" {
 
 ```hcl
 module "configure_nodes" {
-  source = "../../modules/maas-configure-nodes"
+  source = "../../modules/maas-configure-nodes-networking"
 
   nodes = {
     "node1.maas" = {  # Map key is the machine hostname in MAAS

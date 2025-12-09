@@ -10,7 +10,7 @@ func TestMaasConfigureNodesModule(t *testing.T) {
 	t.Parallel()
 
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../modules/maas-configure-nodes",
+		TerraformDir: "../modules/maas-configure-nodes-networking",
 		Vars: map[string]interface{}{
 			"maas_api_url": "http://localhost:5240/MAAS",
 			"maas_api_key": "test_key",
@@ -98,7 +98,7 @@ func TestProfileMerging(t *testing.T) {
 	t.Parallel()
 
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../modules/maas-configure-nodes",
+		TerraformDir: "../modules/maas-configure-nodes-networking",
 		Vars: map[string]interface{}{
 			"maas_api_url": "http://localhost:5240/MAAS",
 			"maas_api_key": "test_key",
@@ -146,7 +146,7 @@ func TestBondInterfaceCreation(t *testing.T) {
 	t.Parallel()
 
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../modules/maas-configure-nodes",
+		TerraformDir: "../modules/maas-configure-nodes-networking",
 		Vars: map[string]interface{}{
 			"maas_api_url": "http://localhost:5240/MAAS",
 			"maas_api_key": "test_key",
@@ -196,7 +196,7 @@ func TestBridgeInterfaceCreation(t *testing.T) {
 	t.Parallel()
 
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../modules/maas-configure-nodes",
+		TerraformDir: "../modules/maas-configure-nodes-networking",
 		Vars: map[string]interface{}{
 			"maas_api_url": "http://localhost:5240/MAAS",
 			"maas_api_key": "test_key",
@@ -243,7 +243,7 @@ func TestVlanInterfaceCreation(t *testing.T) {
 	t.Parallel()
 
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../modules/maas-configure-nodes",
+		TerraformDir: "../modules/maas-configure-nodes-networking",
 		Vars: map[string]interface{}{
 			"maas_api_url": "http://localhost:5240/MAAS",
 			"maas_api_key": "test_key",
@@ -290,7 +290,7 @@ func TestInterfaceLinks(t *testing.T) {
 	t.Parallel()
 
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../modules/maas-configure-nodes",
+		TerraformDir: "../modules/maas-configure-nodes-networking",
 		Vars: map[string]interface{}{
 			"maas_api_url": "http://localhost:5240/MAAS",
 			"maas_api_key": "test_key",
@@ -343,7 +343,7 @@ func TestOutputs(t *testing.T) {
 	t.Parallel()
 
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../modules/maas-configure-nodes",
+		TerraformDir: "../modules/maas-configure-nodes-networking",
 		Vars: map[string]interface{}{
 			"maas_api_url": "http://localhost:5240/MAAS",
 			"maas_api_key": "test_key",
@@ -384,7 +384,7 @@ func TestEmptyConfiguration(t *testing.T) {
 	t.Parallel()
 
 	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
-		TerraformDir: "../modules/maas-configure-nodes",
+		TerraformDir: "../modules/maas-configure-nodes-networking",
 		Vars: map[string]interface{}{
 			"maas_api_url":     "http://localhost:5240/MAAS",
 			"maas_api_key":     "test_key",

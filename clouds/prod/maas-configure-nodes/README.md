@@ -1,6 +1,6 @@
 # maas-configure-nodes Unit
 
-This unit configures network interfaces on MAAS machines using the `maas-configure-nodes` module.
+This unit configures network interfaces on MAAS machines using the `maas-configure-nodes-networking` module.
 
 ## Dependencies
 

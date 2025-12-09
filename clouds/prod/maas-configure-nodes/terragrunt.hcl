@@ -1,5 +1,5 @@
 terraform {
-  source = "../../../modules/maas-configure-nodes"
+  source = "../../../modules/maas-configure-nodes-networking"
 
   extra_arguments "common_vars" {
     commands = get_terraform_commands_that_need_vars()
