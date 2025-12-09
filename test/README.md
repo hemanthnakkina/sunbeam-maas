@@ -61,6 +61,19 @@ go test -v -timeout 30m -parallel 10
   - Power type validation
   - Output checks
 
+- `maas_configure_nodes_storage_test.go` - Tests for the storage configuration module
+  - Basic block device partitioning
+  - Storage profiles with partitions, volume groups, and logical volumes
+  - RAID array configuration (levels 0, 1, 5, 6, 10)
+  - LVM configuration (volume groups and logical volumes)
+  - Multiple machines with different storage profiles
+  - Complex hyperconverged infrastructure setups
+  - Partition tagging for RAID/VG auto-discovery
+  - Inline (backward-compatible) configuration
+  - Boot device configuration
+  - Empty/minimal configuration handling
+  - Module output validation
+
 ### Terragrunt Unit Tests
 - `terragrunt_units_test.go` - Tests for Terragrunt units
   - Unit validation

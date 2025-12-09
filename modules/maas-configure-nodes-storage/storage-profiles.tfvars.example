@@ -1,0 +1,244 @@
+# Example using storage profiles for reusable storage configurations
+
+# Define reusable storage profiles
+storage_profiles = {
+  # Standard compute node with boot + data disks
+  compute-standard = {
+    partitions = {
+      disk1 = [ # Boot disk partitions
+        {
+          size_gigabytes = 50
+          fs_type        = "ext4"
+          mount_point    = "/boot"
+          bootable       = true
+          label          = "boot"
+        },
+        {
+          size_gigabytes = 100
+          fs_type        = "ext4"
+          mount_point    = "/"
+          label          = "root"
+        }
+      ]
+      disk2 = [ # Data disk - single partition for LVM
+        {
+          size_gigabytes = 1000
+          tags           = ["vg:vg_data"]
+        }
+      ]
+    }
+
+    volume_groups = {
+      vg_data = {
+        name = "vg-data"
+        # Partitions auto-discovered via "vg:vg_data" tag
+      }
+    }
+
+    logical_volumes = {
+      lv_var = {
+        name           = "lv-var"
+        volume_group   = "vg_data"
+        size_gigabytes = 200
+        fs_type        = "xfs"
+        mount_point    = "/var"
+      }
+      lv_home = {
+        name           = "lv-home"
+        volume_group   = "vg_data"
+        size_gigabytes = 300
+        fs_type        = "xfs"
+        mount_point    = "/home"
+      }
+    }
+  }
+
+  # Storage node with RAID and LVM
+  storage-raid1 = {
+    partitions = {
+      disk1 = [
+        {
+          size_gigabytes = 1000
+          tags           = ["raid:md0"]
+        }
+      ]
+      disk2 = [
+        {
+          size_gigabytes = 1000
+          tags           = ["raid:md0"]
+        }
+      ]
+    }
+
+    raids = {
+      md0 = {
+        name  = "md0"
+        level = 1 # RAID 1 (mirroring)
+        # Partitions auto-discovered via "raid:md0" tag
+        fs_type     = "ext4"
+        mount_point = "/mnt/raid1"
+      }
+    }
+  }
+
+  # High-performance storage with RAID 10
+  storage-raid10 = {
+    partitions = {
+      disk1 = [{size_gigabytes = 2000, tags = ["raid:md0"]}]
+      disk2 = [{size_gigabytes = 2000, tags = ["raid:md0"]}]
+      disk3 = [{size_gigabytes = 2000, tags = ["raid:md0"]}]
+      disk4 = [{size_gigabytes = 2000, tags = ["raid:md0"]}]
+    }
+
+    raids = {
+      md0 = {
+        name        = "md0"
+        level       = 10 # RAID 10
+        mount_point = "/data"
+        fs_type     = "xfs"
+      }
+    }
+  }
+
+  # Database server with RAID + LVM
+  database = {
+    partitions = {
+      disk1 = [{size_gigabytes = 50, fs_type = "ext4", mount_point = "/boot", bootable = true}]
+      disk2 = [{size_gigabytes = 3000, tags = ["raid:md0"]}]
+      disk3 = [{size_gigabytes = 3000, tags = ["raid:md0"]}]
+      disk4 = [{size_gigabytes = 3000, tags = ["raid:md0"]}]
+    }
+
+    raids = {
+      md0 = {
+        name  = "md0"
+        level = 5 # RAID 5 for capacity + redundancy
+      }
+    }
+
+    volume_groups = {
+      vg_db = {
+        name          = "vg-db"
+        block_devices = ["md0"] # Use RAID as PV
+      }
+    }
+
+    logical_volumes = {
+      lv_mysql = {
+        name           = "lv-mysql"
+        volume_group   = "vg_db"
+        size_gigabytes = 2000
+        fs_type        = "xfs"
+        mount_point    = "/var/lib/mysql"
+        mount_options  = "noatime,nodiratime"
+      }
+      lv_logs = {
+        name           = "lv-logs"
+        volume_group   = "vg_db"
+        size_gigabytes = 500
+        fs_type        = "ext4"
+        mount_point    = "/var/log/mysql"
+      }
+    }
+  }
+}
+
+# Apply profiles to nodes with device mappings
+nodes = {
+  compute-01 = {
+    hostname        = "compute-node-01"
+    storage_profile = "compute-standard"
+
+    devices = {
+      disk1 = {
+        name           = "sda"
+        id_path        = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0"
+        is_boot_device = true
+      }
+      disk2 = {
+        name    = "sdb"
+        id_path = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1"
+      }
+    }
+  }
+
+  compute-02 = {
+    hostname        = "compute-node-02"
+    storage_profile = "compute-standard"
+
+    # Use model/serial instead of id_path
+    devices = {
+      disk1 = {
+        name           = "sda"
+        model          = "Samsung SSD 860"
+        serial         = "S3Z9NB0M123456"
+        is_boot_device = true
+      }
+      disk2 = {
+        name   = "sdb"
+        model  = "WDC WD10EZEX"
+        serial = "WD-WCC6Y1234567"
+      }
+    }
+  }
+
+  storage-01 = {
+    hostname        = "storage-node-01"
+    storage_profile = "storage-raid1"
+
+    devices = {
+      disk1 = {
+        name    = "sda"
+        id_path = "/dev/disk/by-id/wwn-0x5000c50094e12345"
+      }
+      disk2 = {
+        name    = "sdb"
+        id_path = "/dev/disk/by-id/wwn-0x5000c50094e12346"
+      }
+    }
+  }
+
+  storage-02 = {
+    hostname        = "storage-node-02"
+    storage_profile = "storage-raid10"
+
+    devices = {
+      disk1 = {name = "sda", id_path = "/dev/disk/by-id/wwn-0x5000c50094e10001"}
+      disk2 = {name = "sdb", id_path = "/dev/disk/by-id/wwn-0x5000c50094e10002"}
+      disk3 = {name = "sdc", id_path = "/dev/disk/by-id/wwn-0x5000c50094e10003"}
+      disk4 = {name = "sdd", id_path = "/dev/disk/by-id/wwn-0x5000c50094e10004"}
+    }
+  }
+
+  db-server-01 = {
+    hostname        = "db-server-01"
+    storage_profile = "database"
+
+    devices = {
+      disk1 = {name = "sda", id_path = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0", is_boot_device = true}
+      disk2 = {name = "sdb", id_path = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1"}
+      disk3 = {name = "sdc", id_path = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi2"}
+      disk4 = {name = "sdd", id_path = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi3"}
+    }
+  }
+
+  # Inline configuration still supported (no profile)
+  legacy-node = {
+    hostname = "legacy-node-01"
+
+    block_devices = {
+      sda = {
+        name           = "sda"
+        id_path        = "/dev/disk/by-id/ata-WDC_WD10EZEX-08WN4A0_WD-WCC6Y1111111"
+        size_gigabytes = 1000
+        partitions = [
+          {
+            size_gigabytes = 1000
+            fs_type        = "ext4"
+            mount_point    = "/data"
+          }
+        ]
+      }
+    }
+  }
+}
