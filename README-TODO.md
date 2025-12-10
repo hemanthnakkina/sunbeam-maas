@@ -11,6 +11,8 @@
 [ ] maas-config
     Same as above
 
+[ ] Register infra node LXD in maas
+
 [x] maas-configure-networking
     Create fabrics, subnets, vlans
 [ ] maas-enlist-machines
@@ -27,7 +29,7 @@
     To check if we need separate module or just include them in the above ones
 [ ] Compose juju controller and sunbeam infra VMs
     Not started
-[ ] Terraform unit to deploy sunbeam
+[ ] Terraform module to deploy sunbeam and enable all features
     Not started
 
 
@@ -39,3 +41,4 @@
     the datasource is made as resource. In this case we are dealing with interface
     names, we need to change that and deal with MAC address.
 [ ] Destroy of maas_block_device removes the storage from maas. Is this expected?
+[ ] How to provide commissioning scripts if required?

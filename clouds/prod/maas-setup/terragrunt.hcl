@@ -10,6 +10,18 @@ terraform {
   source = "git::https://github.com/canonical/maas-terraform-modules.git//modules/maas-deploy?ref=main"
 }
 
+# Dependencies - this module depends on juju-bootstrap
+dependency "juju_bootstrap" {
+  config_path = "../juju-bootstrap"
+
+  mock_outputs = {
+    juju_cloud = "mock-juju-cloud"
+  }
+
+  # Skip outputs if the dependency hasn't been applied yet
+  skip_outputs = true
+}
+
 locals {
   env_vars = include.env.locals
 }
