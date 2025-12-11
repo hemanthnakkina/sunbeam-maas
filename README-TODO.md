@@ -26,9 +26,7 @@
       RAIDS not working, LVS without mount options not working
       https://github.com/canonical/terraform-provider-maas/issues/391
       https://github.com/canonical/terraform-provider-maas/issues/392
-- [ ] Sunbeam specific tags etc
-      To check if we need separate module or just include them in the above ones
-- [ ] Compose juju controller and sunbeam infra VMs
+- [x] Compose juju controller and sunbeam infra VMs
       Not started
 
 - [ ] Deploy COS on VMs
