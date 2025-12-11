@@ -1,4 +1,2 @@
 # Production environment root configuration
-include "root" {
-  path = find_in_parent_folders()
-}
+# This file is kept minimal to avoid anti-pattern warnings
