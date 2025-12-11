@@ -19,6 +19,7 @@
       Add machines to MAAS. Yet to test
 - [x] maas-configure-nodes
       Configure networking on nodes
+      Expects VLAN resource ID's as part of tfvar. Need to get them from maas-configure-networking
 - [x] maas-configure-nodes-storage
       Configure storage on nodes
       This unit should be moved as part of maas-configure-nodes after testing

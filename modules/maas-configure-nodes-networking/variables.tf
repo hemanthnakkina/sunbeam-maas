@@ -142,3 +142,9 @@ variable "nodes" {
     error_message = "ip_address is required when mode is STATIC"
   }
 }
+
+variable "maas_profile" {
+  description = "MAAS CLI profile name to use for local-exec provisioners"
+  type        = string
+  default     = "root"
+}

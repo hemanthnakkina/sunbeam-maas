@@ -1,7 +1,7 @@
 output "physical_interfaces" {
   description = "Map of physical interface IDs by node and interface key"
   value = {
-    for key, iface in data.maas_network_interface_physical.interface :
+    for key, iface in maas_network_interface_physical.interface :
     key => {
       id          = iface.id
       machine_id  = iface.machine
