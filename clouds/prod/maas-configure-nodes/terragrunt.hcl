@@ -40,3 +40,9 @@ dependency "networking" {
   
   skip_outputs = true
 }
+
+# Pass MAAS credentials to module
+inputs = {
+  maas_api_url = get_env("TF_VAR_maas_api_url", "")
+  maas_api_key = get_env("TF_VAR_maas_api_key", "")
+}
