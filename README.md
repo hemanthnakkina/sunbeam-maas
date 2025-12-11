@@ -1,10 +1,13 @@
 # sunbeam-maas
-Terragrunt files to deploy sunbeam using maas provider
+Terragrunt files to deploy Sunbeam using the MAAS provider.
 
-# Commands to run:
-Populate tfvars in all the necessary units.
-Check clouds/prod/.terragrunt-excludes for the excluded units and update as per your need.
+## Quick start
 
-cd clouds/prod
+1. Populate tfvars in the necessary unit directories (see `clouds/prod/*` for examples).
+2. Check `clouds/prod/.terragrunt-excludes` to review excluded units and update as needed.
+
+From the `clouds/prod` directory run:
+
+```bash
 TF_VAR_maas_api_url="API URL" TF_VAR_maas_api_key="<API KEY>" terragrunt run --all init
 TF_VAR_maas_api_url="API URL" TF_VAR_maas_api_key="<API KEY>" terragrunt run --all apply

@@ -1,0 +1,133 @@
+# Example VM Host Machines Configuration
+# This file demonstrates how to configure VMs across VM hosts
+
+# VM configurations - key is just a label, vm_host specifies the actual VM host system ID
+vm_configurations = {
+  # Example 1: Web servers - 3 instances with basic configuration
+  web_servers = {
+    vm_host         = ["abc123"]  # VM host system ID list (required); host[0] -> first VM, host[1] -> second
+    hostname_prefix = "web"     # Optional: Generates web-0, web-1, web-2
+                                # If omitted, uses key: web_servers-0, web_servers-1, etc.
+    zone            = ["az-1"]    # Optional: Per-VM zones list; zone[0] -> first VM, zone[1] -> second
+    pool            = "compute" # Optional: Per-VM pool
+    count           = 3         # Number of instances to create
+    cores           = 4
+    memory          = 8192      # Memory in MB (8GB)
+    tags            = ["web", "nginx", "production"]  # Optional: Tags to apply
+    
+    # Optional: Storage disks
+    storage_disks = [
+      {
+        size_gigabytes = 50
+        pool           = "default"
+      }
+    ]
+    
+    # Optional: Network interfaces
+    network = [
+      {
+        name        = "eth0"
+        fabric      = "fabric-0"
+        vlan        = "untagged"
+        subnet_cidr = "10.0.1.0/24"
+        ip_address  = null  # Auto-assign IP
+      }
+    ]
+  }
+
+  # Example 2: Database servers - 2 instances with multiple disks
+  db_servers = {
+    vm_host         = ["def456", "def457"]  # Example: db-0 -> def456, db-1 -> def457
+    hostname_prefix = "db"
+    zone            = ["az-2", "az-3"]
+    pool            = "database"
+    count           = 2
+    cores           = 8
+    memory          = 16384  # 16GB
+    tags            = ["database", "postgresql"]
+    
+    storage_disks = [
+      {
+        size_gigabytes = 100  # OS disk
+        pool           = "fast"
+      },
+      {
+        size_gigabytes = 500  # Data disk
+        pool           = "data"
+      }
+    ]
+    
+    network = [
+      {
+        name        = "eth0"
+        subnet_cidr = "10.0.2.0/24"
+      }
+    ]
+  }
+
+  # Example 3: Compute nodes with pinned cores
+  compute_nodes = {
+    vm_host         = ["ghi789"]
+    hostname_prefix = "compute"
+    zone            = ["az-1"]
+    count           = 4
+    cores           = 16
+    pinned_cores    = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    memory          = 32768  # 32GB
+    tags            = ["compute", "openstack"]
+    
+    storage_disks = [
+      {
+        size_gigabytes = 200
+        pool           = "nvme"
+      }
+    ]
+    
+    network = [
+      {
+        name        = "eth0"
+        subnet_cidr = "10.0.3.0/24"
+      },
+      {
+        name        = "eth1"
+        subnet_cidr = "10.0.4.0/24"
+      }
+    ]
+  }
+
+  # Example 4: GPU workers - no zone/pool specified
+  gpu_workers = {
+    vm_host         = ["jkl012"]
+    hostname_prefix = "gpu-worker"
+    # No zone/pool specified - will be null
+    count           = 2
+    cores           = 12
+    memory          = 65536  # 64GB
+    
+    storage_disks = [
+      {
+        size_gigabytes = 500
+      }
+    ]
+    
+    network = [
+      {
+        name        = "eth0"
+        fabric      = "fabric-1"
+        vlan        = "100"
+        subnet_cidr = "192.168.1.0/24"
+        ip_address  = null  # Can specify like "192.168.1.10" for static IP
+      }
+    ]
+  }
+
+  # Example 5: Minimal configuration - no hostname_prefix (uses key as prefix)
+  test_vms = {
+    vm_host = ["mno345"]
+    # hostname_prefix omitted - will generate: test_vms-0
+    zone    = ["az-3"]
+    count   = 1
+    cores   = 2
+    memory  = 4096  # 4GB
+  }
+}
