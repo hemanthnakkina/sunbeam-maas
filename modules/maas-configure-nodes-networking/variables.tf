@@ -1,9 +1,21 @@
+variable "maas_url" {
+  description = "MAAS API URL"
+  type        = string
+}
+
+variable "maas_key" {
+  description = "MAAS API key for authentication"
+  type        = string
+  sensitive   = true
+}
+
 variable "network_profiles" {
   description = "Network profiles that define common interface configurations"
   type = map(object({
     physical_interfaces = optional(map(object({
       name      = optional(string)
       tags      = optional(list(string), [])
+      fabric    = optional(string)
       vlan_id   = optional(number)
       mtu       = optional(number)
       accept_ra = optional(bool)
@@ -18,6 +30,7 @@ variable "network_profiles" {
       bond_updelay          = optional(number)
       bond_lacp_rate        = optional(string)
       bond_xmit_hash_policy = optional(string)
+      fabric                = optional(string)
       vlan_id               = optional(number)
       tags                  = optional(list(string), [])
       mtu                   = optional(number)
@@ -30,6 +43,7 @@ variable "network_profiles" {
       bridge_type = optional(string, "standard")
       bridge_stp  = optional(bool)
       bridge_fd   = optional(number)
+      fabric      = optional(string)
       vlan_id     = optional(number)
       tags        = optional(list(string), [])
       mtu         = optional(number)
@@ -39,8 +53,8 @@ variable "network_profiles" {
     vlan_interfaces = optional(map(object({
       name      = optional(string)
       parent    = string
+      fabric    = string
       vlan_id   = number
-      fabric    = optional(string)
       tags      = optional(list(string), [])
       mtu       = optional(number)
       accept_ra = optional(bool)
@@ -54,6 +68,36 @@ variable "network_profiles" {
     })), {})
   }))
   default = {}
+
+  validation {
+    condition = alltrue([
+      for profile_key, profile in var.network_profiles : alltrue([
+        for iface_key, iface in profile.physical_interfaces :
+        (iface.fabric == null && iface.vlan_id == null) || (iface.fabric != null && iface.vlan_id != null)
+      ])
+    ])
+    error_message = "For network profile physical interfaces: if either fabric or vlan_id is specified, both must be provided"
+  }
+
+  validation {
+    condition = alltrue([
+      for profile_key, profile in var.network_profiles : alltrue([
+        for bond_key, bond in profile.bond_interfaces :
+        (bond.fabric == null && bond.vlan_id == null) || (bond.fabric != null && bond.vlan_id != null)
+      ])
+    ])
+    error_message = "For network profile bond interfaces: if either fabric or vlan_id is specified, both must be provided"
+  }
+
+  validation {
+    condition = alltrue([
+      for profile_key, profile in var.network_profiles : alltrue([
+        for bridge_key, bridge in profile.bridge_interfaces :
+        (bridge.fabric == null && bridge.vlan_id == null) || (bridge.fabric != null && bridge.vlan_id != null)
+      ])
+    ])
+    error_message = "For network profile bridge interfaces: if either fabric or vlan_id is specified, both must be provided"
+  }
 }
 
 variable "nodes" {
@@ -65,6 +109,7 @@ variable "nodes" {
       mac_address = string
       name        = optional(string)
       tags        = optional(list(string), [])
+      fabric      = optional(string)
       vlan_id     = optional(number)
       mtu         = optional(number)
       accept_ra   = optional(bool)
@@ -85,6 +130,7 @@ variable "nodes" {
       bond_updelay          = optional(number)
       bond_lacp_rate        = optional(string)
       bond_xmit_hash_policy = optional(string)
+      fabric                = optional(string)
       vlan_id               = optional(number)
       tags                  = optional(list(string), [])
       mtu                   = optional(number)
@@ -97,6 +143,7 @@ variable "nodes" {
       bridge_type = optional(string, "standard") # standard or ovs
       bridge_stp  = optional(bool)
       bridge_fd   = optional(number)
+      fabric      = optional(string)
       vlan_id     = optional(number)
       tags        = optional(list(string), [])
       mtu         = optional(number)
@@ -141,6 +188,47 @@ variable "nodes" {
     ])
     error_message = "ip_address is required when mode is STATIC"
   }
+
+  validation {
+    condition = alltrue([
+      for node_key, node in var.nodes : alltrue([
+        for iface_key, iface in node.physical_interfaces :
+        (iface.fabric == null && iface.vlan_id == null) || (iface.fabric != null && iface.vlan_id != null)
+      ])
+    ])
+    error_message = "For physical interfaces: if either fabric or vlan_id is specified, both must be provided"
+  }
+
+  validation {
+    condition = alltrue([
+      for node_key, node in var.nodes : alltrue([
+        for bond_key, bond in node.bond_interfaces :
+        (bond.fabric == null && bond.vlan_id == null) || (bond.fabric != null && bond.vlan_id != null)
+      ])
+    ])
+    error_message = "For bond interfaces: if either fabric or vlan_id is specified, both must be provided"
+  }
+
+  validation {
+    condition = alltrue([
+      for node_key, node in var.nodes : alltrue([
+        for bridge_key, bridge in node.bridge_interfaces :
+        (bridge.fabric == null && bridge.vlan_id == null) || (bridge.fabric != null && bridge.vlan_id != null)
+      ])
+    ])
+    error_message = "For bridge interfaces: if either fabric or vlan_id is specified, both must be provided"
+  }
+
+  validation {
+    condition = alltrue([
+      for node_key, node in var.nodes : alltrue([
+        for vlan_key, vlan in node.vlan_interfaces :
+        vlan.fabric != null
+      ])
+    ])
+    error_message = "For vlan interfaces: fabric is required (vlan_id is already mandatory)"
+  }
+
 }
 
 variable "maas_profile" {

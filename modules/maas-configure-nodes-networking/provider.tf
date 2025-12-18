@@ -1,15 +1,14 @@
-variable "maas_api_url" {
-  description = "MAAS API URL"
-  type        = string
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    maas = {
+      source  = "canonical/maas"
+      version = ">= 2.0"
+    }
+  }
 }
-
-variable "maas_api_key" {
-  description = "MAAS API Key"
-  type        = string
-  sensitive   = true
-}
-
 provider "maas" {
-  api_url = var.maas_api_url
-  api_key = var.maas_api_key
+  api_key = var.maas_key
+  api_url = var.maas_url
 }
+

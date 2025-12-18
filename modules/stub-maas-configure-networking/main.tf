@@ -1,0 +1,7 @@
+variable "spaces" {
+
+}
+
+variable "fabrics" {
+
+}

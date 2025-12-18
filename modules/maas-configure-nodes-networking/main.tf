@@ -129,6 +129,35 @@ locals {
       })
     }
   ]...)
+
+  # Collect unique fabric/vlan_id pairs from all interface types
+  # Only include pairs where both fabric and vlan_id are present
+  vlans = toset(concat(
+    # From physical interfaces
+    [
+      for iface in local.physical_interfaces :
+      { fabric = iface.fabric, vlan_id = iface.vlan_id }
+      if iface.fabric != null && iface.vlan_id != null
+    ],
+    # From bond interfaces
+    [
+      for bond in local.bond_interfaces :
+      { fabric = bond.fabric, vlan_id = bond.vlan_id }
+      if bond.fabric != null && bond.vlan_id != null
+    ],
+    # From bridge interfaces
+    [
+      for bridge in local.bridge_interfaces :
+      { fabric = bridge.fabric, vlan_id = bridge.vlan_id }
+      if bridge.fabric != null && bridge.vlan_id != null
+    ],
+    # From vlan interfaces
+    [
+      for vlan in local.vlan_interfaces :
+      { fabric = vlan.fabric, vlan_id = vlan.vlan_id }
+      if vlan.fabric != null && vlan.vlan_id != null
+    ]
+  ))
 }
 
 # Physical Network Interfaces - Use data source to reference existing interfaces
@@ -149,91 +178,109 @@ data "maas_network_interface_physical" "current" {
 
 # Prepare networking configuration per node before making changes
 # Always runs when there are bond or bridge interfaces to create, or when there's drift
-resource "null_resource" "prepare_node_networking" {
-  for_each = {
-    for node_key, machine_id in local.machine_ids : node_key => machine_id
-    if(
-      # Check if this node has any bonds or bridges that need creation
-      anytrue([
-        for key, bond in local.bond_interfaces :
-        bond.machine_id == machine_id
-      ]) ||
-      anytrue([
-        for key, bridge in local.bridge_interfaces :
-        bridge.machine_id == machine_id
-      ]) ||
-      # Or check for drift in physical interfaces
-      anytrue([
-        for key, iface in local.physical_interfaces :
-        iface.machine_id == machine_id && (
-          try(data.maas_network_interface_physical.current[key].vlan, null) != iface.vlan_id ||
-          try(data.maas_network_interface_physical.current[key].mtu, null) != iface.mtu ||
-          !setequal(try(data.maas_network_interface_physical.current[key].tags, []), coalesce(iface.tags, []))
-        )
-      ])
-    )
-  }
+# resource "null_resource" "prepare_node_networking" {
+#   for_each = {
+#     for node_key, machine_id in local.machine_ids : node_key => machine_id
+#     if(
+#       # Check if this node has any bonds or bridges that need creation
+#       anytrue([
+#         for key, bond in local.bond_interfaces :
+#         bond.machine_id == machine_id
+#       ]) ||
+#       anytrue([
+#         for key, bridge in local.bridge_interfaces :
+#         bridge.machine_id == machine_id
+#       ]) ||
+#       # Or check for drift in physical interfaces
+#       anytrue([
+#         for key, iface in local.physical_interfaces :
+#         iface.machine_id == machine_id && (
+#           try(data.maas_network_interface_physical.current[key].vlan, null) != iface.vlan_id ||
+#           try(data.maas_network_interface_physical.current[key].mtu, null) != iface.mtu ||
+#           !setequal(try(data.maas_network_interface_physical.current[key].tags, []), coalesce(iface.tags, []))
+#         )
+#       ])
+#     )
+#   }
 
-  # Trigger when configuration changes
-  triggers = {
-    interfaces_config = sha256(jsonencode([
-      for key, iface in local.physical_interfaces :
-      iface if iface.machine_id == each.value
-    ]))
-  }
+#   # Trigger when configuration changes
+#   triggers = {
+#     interfaces_config = sha256(jsonencode([
+#       for key, iface in local.physical_interfaces :
+#       iface if iface.machine_id == each.value
+#     ]))
+#   }
 
-  provisioner "local-exec" {
-    command = <<-EOT
-      set -e
+#   provisioner "local-exec" {
+#     command = <<-EOT
+#       set -e
 
-      echo "DO NOTHING HERE!!!"
-      # Setup logging
-      #LOGFILE="/tmp/maas-network-prep-${each.value}.log"
-      #exec > >(tee -a "$LOGFILE") 2>&1
+#       echo "DO NOTHING HERE!!!"
+#       # Setup logging
+#       #LOGFILE="/tmp/maas-network-prep-${each.value}.log"
+#       #exec > >(tee -a "$LOGFILE") 2>&1
 
-      #echo "=== Starting network preparation for ${each.value} at $(date) ==="
+#       #echo "=== Starting network preparation for ${each.value} at $(date) ==="
 
-      # Login to MAAS (creates or updates the profile)
-      #PROFILE="${var.maas_profile}"
-      #echo "Logging in to MAAS with profile '$PROFILE'..."
-      #maas login $PROFILE ${var.maas_api_url} ${var.maas_api_key}
-      #echo "Login successful"
+#       # Login to MAAS (creates or updates the profile)
+#       #PROFILE="${var.maas_profile}"
+#       #echo "Logging in to MAAS with profile '$PROFILE'..."
+#       #maas login $PROFILE ${var.maas_url} ${var.maas_key}
+#       #echo "Login successful"
 
-      # Restore networking configuration to clean state
-      #echo "Restoring networking configuration for ${each.value}..."
-      #if maas $PROFILE machine restore-networking-configuration ${each.value}; then
-      #  echo "Networking configuration restored successfully"
-      #else
-      #  echo "Failed to restore networking configuration (continuing anyway)"
-      #fi
+#       # Restore networking configuration to clean state
+#       #echo "Restoring networking configuration for ${each.value}..."
+#       #if maas $PROFILE machine restore-networking-configuration ${each.value}; then
+#       #  echo "Networking configuration restored successfully"
+#       #else
+#       #  echo "Failed to restore networking configuration (continuing anyway)"
+#       #fi
 
-      # Unlink all subnet links from physical interfaces
-      #echo "Unlinking subnet connections from physical interfaces..."
-      #for interface_id in $(maas $PROFILE interfaces read ${each.value} 2>/dev/null | jq -r '.[] | select(.type == "physical") | .id' 2>/dev/null || echo ""); do
-      #  if [ -n "$interface_id" ]; then
-      #    echo "  Processing interface ID: $interface_id"
-      #    for link_id in $(maas $PROFILE interface read ${each.value} $interface_id 2>/dev/null | jq -r '.links[]? | .id' 2>/dev/null || echo ""); do
-      #      if [ -n "$link_id" ]; then
-      #        echo "    Unlinking subnet link ID: $link_id"
-      #        if maas $PROFILE interface unlink-subnet ${each.value} $interface_id id=$link_id; then
-      #          echo "      Successfully unlinked link $link_id"
-      #        else
-      #          echo "      Failed to unlink link $link_id (continuing)"
-      #        fi
-      #      fi
-      #    done
-      #  fi
-      #done
+#       # Unlink all subnet links from physical interfaces
+#       #echo "Unlinking subnet connections from physical interfaces..."
+#       #for interface_id in $(maas $PROFILE interfaces read ${each.value} 2>/dev/null | jq -r '.[] | select(.type == "physical") | .id' 2>/dev/null || echo ""); do
+#       #  if [ -n "$interface_id" ]; then
+#       #    echo "  Processing interface ID: $interface_id"
+#       #    for link_id in $(maas $PROFILE interface read ${each.value} $interface_id 2>/dev/null | jq -r '.links[]? | .id' 2>/dev/null || echo ""); do
+#       #      if [ -n "$link_id" ]; then
+#       #        echo "    Unlinking subnet link ID: $link_id"
+#       #        if maas $PROFILE interface unlink-subnet ${each.value} $interface_id id=$link_id; then
+#       #          echo "      Successfully unlinked link $link_id"
+#       #        else
+#       #          echo "      Failed to unlink link $link_id (continuing)"
+#       #        fi
+#       #      fi
+#       #    done
+#       #  fi
+#       #done
 
-      #echo "=== Network preparation completed for ${each.value} at $(date) ==="
-      #echo "Log file: $LOGFILE"
-    EOT
+#       #echo "=== Network preparation completed for ${each.value} at $(date) ==="
+#       #echo "Log file: $LOGFILE"
+#     EOT
 
-    interpreter = ["bash", "-c"]
-  }
+#     interpreter = ["bash", "-c"]
+#   }
 
-  depends_on = [data.maas_network_interface_physical.current]
+#   depends_on = [data.maas_network_interface_physical.current]
+# }
+
+# MAAS already creates the physical nics on node commissioning.
+
+# Read existing VLANs to infer actual VLAN resource IDs
+data "maas_vlan" "vlans" {
+  for_each = { for tuple in local.vlans : "${tuple.fabric}-${tuple.vlan_id}" => tuple }
+
+  vlan   = each.value.vlan_id
+  fabric = each.value.fabric
 }
+
+# On commissionning, MAAS creates physical interfaces. We import them here to manage them.
+import {
+  for_each = local.physical_interfaces
+  to       = maas_network_interface_physical.interface[each.key]
+  id       = "${each.value.machine_id}/${each.value.mac_address}"
+}
+
 
 # Physical Network Interfaces - Update physical interface properties
 resource "maas_network_interface_physical" "interface" {
@@ -243,10 +290,10 @@ resource "maas_network_interface_physical" "interface" {
   mac_address = each.value.mac_address
   name        = each.value.name
   tags        = each.value.tags
-  vlan        = each.value.vlan_id
+  vlan        = try(data.maas_vlan.vlans["${each.value.fabric}-${each.value.vlan_id}"].id, null)
   mtu         = each.value.mtu
 
-  depends_on = [null_resource.prepare_node_networking]
+  # depends_on = [null_resource.prepare_node_networking]
 }
 
 # Bond Interfaces
@@ -262,7 +309,7 @@ resource "maas_network_interface_bond" "bond" {
   bond_updelay          = each.value.bond_updelay
   bond_lacp_rate        = each.value.bond_lacp_rate
   bond_xmit_hash_policy = each.value.bond_xmit_hash_policy
-  vlan                  = each.value.vlan_id
+  vlan                  = try(data.maas_vlan.vlans["${each.value.fabric}-${each.value.vlan_id}"].id, null)
   tags                  = each.value.tags
   mtu                   = each.value.mtu
 
@@ -280,7 +327,7 @@ resource "maas_network_interface_bridge" "bridge" {
   bridge_type = each.value.bridge_type
   bridge_stp  = each.value.bridge_stp
   bridge_fd   = each.value.bridge_fd
-  vlan        = each.value.vlan_id
+  vlan        = try(data.maas_vlan.vlans["${each.value.fabric}-${each.value.vlan_id}"].id, null)
   tags        = each.value.tags
   mtu         = each.value.mtu
 
@@ -291,13 +338,15 @@ resource "maas_network_interface_bridge" "bridge" {
   ]
 }
 
+
+
 # VLAN Interfaces
 resource "maas_network_interface_vlan" "vlan" {
   for_each = local.vlan_interfaces
 
   machine = each.value.machine_id
   parent  = each.value.parent
-  vlan    = each.value.vlan_id
+  vlan    = try(data.maas_vlan.vlans["${each.value.fabric}-${each.value.vlan_id}"].id, null)
   fabric  = each.value.fabric
   tags    = each.value.tags
   mtu     = each.value.mtu

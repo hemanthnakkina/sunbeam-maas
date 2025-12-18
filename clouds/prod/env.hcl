@@ -1,3 +1,0 @@
-# Production environment configuration
-locals {
-}

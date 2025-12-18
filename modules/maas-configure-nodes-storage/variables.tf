@@ -1,3 +1,14 @@
+variable "maas_url" {
+  description = "MAAS API URL"
+  type        = string
+}
+
+variable "maas_key" {
+  description = "MAAS API key for authentication"
+  type        = string
+  sensitive   = true
+}
+
 variable "storage_profiles" {
   description = "Storage profiles defining partition layouts, RAID, and LVM configurations"
   type = map(object({

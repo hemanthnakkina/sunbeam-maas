@@ -1,4 +1,13 @@
 # MAAS Configure Networking Module Variables
+variable "maas_url" {
+  description = "The MAAS URL in the format of: http://127.0.0.1:5240/MAAS"
+  type        = string
+}
+
+variable "maas_key" {
+  description = "The MAAS API key"
+  type        = string
+}
 
 # Spaces configuration
 variable "spaces" {

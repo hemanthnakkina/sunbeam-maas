@@ -1,3 +1,13 @@
+variable "maas_url" {
+  description = "The MAAS URL in the format of: http://127.0.0.1:5240/MAAS"
+  type        = string
+}
+
+variable "maas_key" {
+  description = "The MAAS API key"
+  type        = string
+}
+
 variable "vm_configurations" {
   description = "Map of VM configurations to create. Each configuration can specify a count for multiple instances."
   type = map(object({

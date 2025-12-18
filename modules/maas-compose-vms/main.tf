@@ -8,6 +8,11 @@ terraform {
   }
 }
 
+provider "maas" {
+  api_key = var.maas_key
+  api_url = var.maas_url
+}
+
 locals {
   # Create a flat list of VM instances based on count
   vm_instances = flatten([
@@ -36,6 +41,16 @@ locals {
   # Create a map for easier resource creation
   vm_instances_map = {
     for vm in local.vm_instances : vm.key => vm
+  }
+
+  # Create a mapping from tags to hosts
+  tags_to_host = {
+    for tag in distinct(flatten([
+      for vm_key, vm in local.vm_instances_map : vm.tags
+      ])) : tag => [
+      for vm_key, vm in local.vm_instances_map :
+      vm.hostname if contains(vm.tags, tag)
+    ]
   }
 }
 
@@ -71,18 +86,9 @@ resource "maas_vm_host_machine" "vm" {
 
 # Apply tags to VMs
 resource "maas_tag" "vm_tags" {
-  for_each = {
-    for item in flatten([
-      for vm_key, vm in local.vm_instances_map : [
-        for tag in vm.tags : {
-          key      = "${vm_key}-${tag}"
-          tag      = tag
-          machines = [maas_vm_host_machine.vm[vm_key].id]
-        }
-      ]
-    ]) : item.key => item
-  }
+  depends_on = [maas_vm_host_machine.vm]
+  for_each   = local.tags_to_host
 
-  name     = each.value.tag
-  machines = each.value.machines
+  name     = each.key
+  machines = each.value
 }

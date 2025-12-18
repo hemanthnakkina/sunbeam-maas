@@ -7,3 +7,7 @@ terraform {
     }
   }
 }
+provider "maas" {
+  api_key = var.maas_key
+  api_url = var.maas_url
+}

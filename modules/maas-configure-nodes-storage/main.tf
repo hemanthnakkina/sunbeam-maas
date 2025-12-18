@@ -249,16 +249,17 @@ resource "maas_volume_group" "vgs" {
   machine = data.maas_machine.machines[each.value.machine_key].id
   name    = each.value.name
 
+  # TODO: uncomment that block, commented because I could not make it work correctly yet
   # Block device IDs in volume group
   # Can reference either regular block devices or RAID arrays (which become block devices)
-  block_devices = concat(
-    [
-      for bd in each.value.block_devices :
-      contains(keys(maas_block_device.devices), "${each.value.machine_key}.${bd}") ?
-      maas_block_device.devices["${each.value.machine_key}.${bd}"].id :
-      maas_raid.raids["${each.value.machine_key}.${bd}"].id
-    ]
-  )
+  # block_devices = concat(
+  #   [
+  #     for bd in each.value.block_devices :
+  #     contains(keys(maas_block_device.devices), "${each.value.machine_key}.${bd}") ?
+  #     maas_block_device.devices["${each.value.machine_key}.${bd}"].id :
+  #     maas_raid.raids["${each.value.machine_key}.${bd}"].id
+  #   ]
+  # )
 
   # Partition IDs in volume group: merge explicit IDs + partition IDs from tagged partitions
   partitions = concat(
