@@ -1,22 +1,15 @@
 
 locals {
-  deployment = "openstack-pc8a"
+  deployment = ""
   # These files are gitignored to avoid committing sensitive information
   credentials   = jsondecode(read_tfvars_file("${get_repo_root()}/stacks/pc8a/credentials.hcl"))
   profiles      = jsondecode(read_tfvars_file("${get_repo_root()}/stacks/pc8a/profiles.hcl"))
   sunbeam_infra = jsondecode(read_tfvars_file("${get_repo_root()}/stacks/pc8a/sunbeam-infra.hcl"))
   sunbeam_nodes = jsondecode(read_tfvars_file("${get_repo_root()}/stacks/pc8a/sunbeam-nodes.hcl"))
   # Following loops are to append the deployment tag to all VMs and machines
-  vm_configurations = {
-    for k, v in local.sunbeam_infra.vm_configurations : k => merge(v, {
-      tags = distinct(concat(coalesce(v.tags, []), [local.deployment]))
-    })
-  }
-  machines = {
-    for k, v in local.sunbeam_nodes.machines : k => merge(v, {
-      tags = distinct(concat(coalesce(v.tags, []), [local.deployment]))
-    })
-  }
+  vm_configurations = local.sunbeam_infra.vm_configurations
+  machines          = local.sunbeam_nodes.machines
+  isolcpus          = "96-127,352-383,224-255,480-511"
 }
 
 unit "maas-setup" {
@@ -70,6 +63,35 @@ unit "sunbeam-nodes" {
       "../maas-configure-networking"
     ],
     machines = local.machines
+  }
+}
+
+unit "sunbeam-nodes-tagging" {
+  source = "${get_repo_root()}/units/maas-tag-machines"
+  path   = "sunbeam-nodes-tagging"
+  values = {
+    maas_setup_path = "../maas-setup"
+    dependencies = [
+      "../sunbeam-nodes",
+      "../sunbeam-infra"
+    ],
+    tags = {
+      isocpu = {
+        machines    = keys(local.sunbeam_nodes.machines)
+        kernel_opts = "isolcpus=domain,managed_irq,${local.isolcpus} nohz_full=${local.isolcpus} rcu_nocbs=${local.isolcpus} rcu_nocb_poll"
+      }
+      hugepages = {
+        machines    = keys(local.sunbeam_nodes.machines)
+        kernel_opts = "transparent_hugepage=never default_hugepagesz=1G hugepagesz=1G hugepages=node0:1000,node1:1000"
+      }
+      openstack-pc8a = {
+        machines = concat(
+          keys(local.sunbeam_nodes.machines),
+          # This can't work because we don't have the VM names here.
+          # keys(local.vm_configurations)
+        )
+      }
+    }
   }
 }
 
